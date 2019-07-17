@@ -9,6 +9,8 @@ torch.manual_seed(1)
 
 gpu_available = torch.cuda.is_available()
 
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
 if gpu_available:
     torch.cuda.manual_seed(1)
 
@@ -69,13 +71,19 @@ class BiLSTM_CRF(nn.Module):
         forward_var = init_alphas
 
         for feat in feats:
-            alphas_t = []
-            for next_tag in range(self.tagset_size):
-                emit_score = feat[next_tag].view(1, -1).expand(1, self.tagset_size)
-                trans_score = self.transitions[next_tag].view(1, -1)
-                next_tag_var = forward_var + trans_score + emit_score
-                alphas_t.append(log_sum_exp(next_tag_var).view(1))
-            forward_var = torch.cat(alphas_t).view(1, -1)
+            # alphas_t = []
+            # for next_tag in range(self.tagset_size):
+            #     emit_score = feat[next_tag].view(1, -1).expand(1, self.tagset_size)
+            #     trans_score = self.transitions[next_tag].view(1, -1)
+            #     next_tag_var = forward_var + trans_score + emit_score
+            #     alphas_t.append(log_sum_exp(next_tag_var).view(1))
+            # forward_var = torch.cat(alphas_t).view(1, -1)
+            emit_score = feat.view(-1, 1)
+            tag_var = forward_var + self.transitions + emit_score
+            max_tag_var, _ = torch.max(tag_var, dim=1)
+            tag_var = tag_var - max_tag_var.view(-1, 1)
+            forward_var = max_tag_var + torch.log(torch.sum(torch.exp(tag_var), dim=1)).view(1, -1)
+        # terminal_var = (forward_var + self.transitions[self.tag_to_ix[STOP_TAG]]).view(1, -1)
         terminal_var = forward_var + self.transitions[self.tag_to_ix[STOP_TAG]]
         alpha = log_sum_exp(terminal_var)
         return alpha
@@ -93,16 +101,20 @@ class BiLSTM_CRF(nn.Module):
         return lstm_feats
 
     def _score_sentence(self, feats, tags):
+        r = torch.LongTensor(range(feats.size()[0]))
         if gpu_available:
-            score = torch.zeros(1).cuda()
-            tags = torch.cat([torch.tensor([self.tag_to_ix[START_TAG]], dtype=torch.long).cuda(), tags])
+            r = r.cuda()
+            pad_start_tags = torch.cat([torch.cuda.LongTensor([self.tag_to_ix[START_TAG]]), tags])
+            pad_stop_tags = torch.cat([tags, torch.cuda.LongTensor([self.tag_to_ix[STOP_TAG]])])
         else:
-            score = torch.zeros(1)
-            tags = torch.cat([torch.tensor([self.tag_to_ix[START_TAG]], dtype=torch.long), tags])
+            pad_start_tags = torch.cat([torch.LongTensor([self.tag_to_ix[START_TAG]]), tags])
+            pad_stop_tags = torch.cat([tags, torch.LongTensor([self.tag_to_ix[STOP_TAG]])])
         
-        for i, feat in enumerate(feats):
-            score = score + self.transitions[tags[i + 1], tags[i]] + feat[tags[i + 1]]
-        score = score + self.transitions[self.tag_to_ix[STOP_TAG], tags[-1]]
+        # for i, feat in enumerate(feats):
+        #     score = score + self.transitions[tags[i + 1], tags[i]] + feat[tags[i + 1]]
+        # score = score + self.transitions[self.tag_to_ix[STOP_TAG], tags[-1]]
+
+        score = torch.sum(self.transitions[pad_stop_tags, pad_start_tags]) + torch.sum(feats[r, tags])
         return score
 
     def _viterbi_decode(self, feats):
@@ -115,18 +127,31 @@ class BiLSTM_CRF(nn.Module):
 
         forward_var = init_vvars
         for feat in feats:
-            bptrs_t = []
-            viterbivars_t = []
+            # bptrs_t = []
+            # viterbivars_t = []
 
-            for next_tag in range(self.tagset_size):
-                next_tag_var = forward_var + self.transitions[next_tag]
-                best_tag_id = argmax(next_tag_var)
-                bptrs_t.append(best_tag_id)
-                viterbivars_t.append(next_tag_var[0][best_tag_id].view(1))
-            forward_var = (torch.cat(viterbivars_t) + feat).view(1, -1)
-            backpointers.append(bptrs_t)
+            # for next_tag in range(self.tagset_size):
+            #     next_tag_var = forward_var + self.transitions[next_tag]
+            #     best_tag_id = argmax(next_tag_var)
+            #     bptrs_t.append(best_tag_id)
+            #     viterbivars_t.append(next_tag_var[0][best_tag_id].view(1))
+            # forward_var = (torch.cat(viterbivars_t) + feat).view(1, -1)
+            # backpointers.append(bptrs_t)
+            next_tag_var = forward_var.view(1, -1).expand(self.tagset_size, self.tagset_size)\
+                + self.transitions
+            _, bptrs_t = torch.max(next_tag_var, dim=1)
+            bptrs_t = bptrs_t.squeeze().data.cpu().numpy()
+            next_tag_var = next_tag_var.data.cpu().numpy()
+            viterbivars_t = next_tag_var[range(len(bptrs_t)), bptrs_t]
+            viterbivars_t = torch.FloatTensor(viterbivars_t)
+            if gpu_available:
+                viterbivars_t = viterbivars_t.cuda()
+            forward_var = (viterbivars_t + feat).view(1, -1)
+            backpointers.append(bptrs_t) 
 
         terminal_var = forward_var + self.transitions[self.tag_to_ix[STOP_TAG]]
+        # terminal_var.data[self.tag_to_ix[STOP_TAG]] = -10000.
+        # terminal_var.data[self.tag_to_ix[START_TAG]] = -10000.
         best_tag_id = argmax(terminal_var)
         path_score = terminal_var[0][best_tag_id]
 
@@ -203,7 +228,9 @@ with torch.no_grad():
         precheck_tags = precheck_tags.cuda()
     print(model(precheck_sent))
 
-for epoch in range(300):
+for epoch in range(20):
+    global_loss = 0
+    index_t = 0
     for sentence, tags in training_data:
         model.zero_grad()
 
@@ -222,7 +249,13 @@ for epoch in range(300):
         loss.backward()
         optimizer.step()
 
-        print("Epoch:" + str(epoch) + ", loss:" + str(loss[0].item()))
+        global_loss += loss.item()
+
+        index_t += 1
+        if index_t % 100 == 0:
+            print("Epoch:" + str(epoch) + ", progess: " + str(index_t / len(training_data) * 100) + "%, avg_loss:" + str(global_loss / index_t))
+
+    print("Epoch:" + str(epoch) + ", avg_loss:" + str(global_loss / len(training_data)))
 
 with torch.no_grad():
     precheck_sent = prepare_sequence(training_data[0][0], word_to_ix)
