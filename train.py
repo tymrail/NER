@@ -88,7 +88,7 @@ for epoch in range(500):
         global_loss += loss.item()
 
         index_t += 1
-        if index_t % 50 == 0:
+        if index_t % 5000 == 0:
             # print("Epoch:" + str(epoch) + ", progess: " + str(index_t / len(training_data) * 100) + "%, avg_loss:" + str(global_loss / index_t))
             with open("runs/" + file_name, "a+") as f:
                 f.write("|Epoch:" + str(epoch) + "|progess: " + str(index_t / len(training_data) * 100) + "%|avg_loss:" + str(global_loss / index_t) + "|\n")
