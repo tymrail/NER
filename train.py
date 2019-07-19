@@ -73,6 +73,10 @@ for epoch in range(100):
         model.zero_grad()
 
         sentence_in = prepare_sequence(sentence, word_to_ix)
+
+        if len(sentence_in) < 2:
+            continue
+
         targets = torch.tensor([tag_to_ix[t] for t in tags], dtype=torch.long)
 
         if gpu_available:
