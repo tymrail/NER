@@ -49,6 +49,8 @@ TAG_SET_CoNLL, tag_to_ix, word_to_ix, training_data, testa_data, testb_data = ge
 
 # print(training_data)
 
+training_data = training_data + testa_data
+
 model = BiLSTM_CRF(len(word_to_ix), tag_to_ix, EMBEDDING_DIM, HIDDEN_DIM)
 
 if gpu_available:
@@ -97,7 +99,7 @@ for epoch in range(500):
         f.write("|Epoch:" + str(epoch) + "|avg_loss:" + str(global_loss / index_t) + "|\n")
     print("Epoch:" + str(epoch) + "|avg_loss:" + str(global_loss / len(training_data)) + "|")
 
-torch.save(model, "saved_models/toy_model_8.pkl")
+torch.save(model, "saved_models/model_ver_1.pkl")
 
 print("Training Done.")
 
