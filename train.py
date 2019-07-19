@@ -35,7 +35,7 @@ def log_sum_exp(vec):
 
 now = int(time.time())
 file_name = str(now) + "_run.txt"
-with open("runs/" + file_name, "w") as f:
+with open("runs/" + file_name, "w+") as f:
     dt = str(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(now)))
     f.write("Start training at " + dt + "\n")
 
