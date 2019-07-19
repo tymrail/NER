@@ -41,8 +41,8 @@ with open("runs/" + file_name, "w+") as f:
 
 START_TAG = "<START>"
 STOP_TAG = "<STOP>"
-EMBEDDING_DIM = 10
-HIDDEN_DIM = 8
+EMBEDDING_DIM = 128
+HIDDEN_DIM = 256
 
 TAG_SET_CoNLL, tag_to_ix, word_to_ix, training_data, testa_data, testb_data = get_data_large()
 # TAG_SET_CoNLL, tag_to_ix, word_to_ix, training_data, testa_data, testb_data = get_data_toy()
@@ -95,7 +95,7 @@ for epoch in range(500):
     
     with open("runs/" + file_name, "a+") as f:
         f.write("|Epoch:" + str(epoch) + "|avg_loss:" + str(global_loss / index_t) + "|\n")
-    # print("Epoch:" + str(epoch) + "|avg_loss:" + str(global_loss / len(training_data)) + "|\n")
+    print("Epoch:" + str(epoch) + "|avg_loss:" + str(global_loss / len(training_data)) + "|")
 
 torch.save(model, "saved_models/toy_model_8.pkl")
 
