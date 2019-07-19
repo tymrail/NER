@@ -70,6 +70,8 @@ def read_data(path):
     return data_prepare
 
 def get_data_large():
+    START_TAG = "<START>"
+    STOP_TAG = "<STOP>"
     TAG_SET_CoNLL = ["B-LOC", "I-LOC", "I-PER", "B-MISC", "I-MISC", "B-ORG", "I-ORG", "O",]
 
     training_data = read_data("data/CoNLL-2003/train.json")
