@@ -53,8 +53,62 @@ def data_prepare(path, file_name, json_name):
     with open(os.path.join(path, json_name) + "_tag_ner.json", "w") as ner_file:
         ner_file.write(json.dumps(list(tag_ner_set)))
 
-data_prepare("data/CoNLL-2003", "eng.train.openNLP", "train")
-data_prepare("data/CoNLL-2003", "eng.testa.openNLP", "testa")
-data_prepare("data/CoNLL-2003", "eng.testb.openNLP", "testb")
+def prepare_data_well():
+    data_prepare("data/CoNLL-2003", "eng.train.openNLP", "train")
+    data_prepare("data/CoNLL-2003", "eng.testa.openNLP", "testa")
+    data_prepare("data/CoNLL-2003", "eng.testb.openNLP", "testb")
 
-       
+def read_data(path):
+    with open(path, 'r') as file:
+        json_data = json.load(file)
+    data_prepare = []
+    for data in json_data:
+        data_prepare.append((
+            data["sentence"],
+            data["tag_ner"]
+        ))
+    return data_prepare
+
+def get_data_large():
+    TAG_SET_CoNLL = ["B-LOC", "I-LOC", "I-PER", "B-MISC", "I-MISC", "B-ORG", "I-ORG", "O",]
+
+    training_data = read_data("data/CoNLL-2003/train.json")
+    testa_data = read_data("data/CoNLL-2003/testa.json")
+    testb_data = read_data("data/CoNLL-2003/testb.json")
+
+    word_to_ix = {}
+    all_data = training_data + testa_data + testb_data
+    for sentence, tags in all_data:
+        for word in sentence:
+            if word not in word_to_ix:
+                word_to_ix[word] = len(word_to_ix)
+
+    tag_to_ix = {}
+    for index, tag in enumerate(TAG_SET_CoNLL):
+        tag_to_ix[tag] = index
+    tag_to_ix[START_TAG] = len(TAG_SET_CoNLL)
+    tag_to_ix[STOP_TAG] = len(TAG_SET_CoNLL) + 1
+
+    return TAG_SET_CoNLL, tag_to_ix, word_to_ix, training_data, testa_data, testb_data
+
+def get_data_toy():
+    TAG_SET_CoNLL = ["B-LOC", "I-LOC", "I-PER", "B-MISC", "I-MISC", "B-ORG", "I-ORG", "O",]
+
+    training_data = read_data("data/CoNLL-2003/train.json")
+    testa_data = read_data("data/CoNLL-2003/testa.json")
+    testb_data = read_data("data/CoNLL-2003/testb.json")
+
+    word_to_ix = {}
+    all_data = training_data + testa_data + testb_data
+    for sentence, tags in all_data:
+        for word in sentence:
+            if word not in word_to_ix:
+                word_to_ix[word] = len(word_to_ix)
+
+    tag_to_ix = {}
+    for index, tag in enumerate(TAG_SET_CoNLL):
+        tag_to_ix[tag] = index
+    tag_to_ix[START_TAG] = len(TAG_SET_CoNLL)
+    tag_to_ix[STOP_TAG] = len(TAG_SET_CoNLL) + 1
+
+    return TAG_SET_CoNLL, tag_to_ix, word_to_ix, training_data[:100], testa_data[:30], testb_data[:30]

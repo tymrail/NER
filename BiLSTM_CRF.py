@@ -18,7 +18,6 @@ def argmax(vec):
     _, idx = torch.max(vec, 1)
     return idx.item()
 
-
 def prepare_sequence(seq, to_ix):
     idxs = [to_ix[w] for w in seq]
     return torch.tensor(idxs, dtype=torch.long)
@@ -193,7 +192,7 @@ STOP_TAG = "<STOP>"
 EMBEDDING_DIM = 10
 HIDDEN_DIM = 8
 
-TAG_SET_CoNLL = ["B-LOC", "I-PER", "B-MISC", "I-LOC", "O", "B-ORG", "I-ORG", "I-MISC"]
+TAG_SET_CoNLL = ["B-LOC", "I-LOC", "I-PER", "B-MISC", "I-MISC", "B-ORG", "I-ORG", "O",]
 
 training_data = read_data("data/CoNLL-2003/train.json")
 testa_data = read_data("data/CoNLL-2003/testa.json")
