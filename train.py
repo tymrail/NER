@@ -47,7 +47,7 @@ HIDDEN_DIM = 8
 TAG_SET_CoNLL, tag_to_ix, word_to_ix, training_data, testa_data, testb_data = get_data_large()
 # TAG_SET_CoNLL, tag_to_ix, word_to_ix, training_data, testa_data, testb_data = get_data_toy()
 
-print(training_data)
+# print(training_data)
 
 model = BiLSTM_CRF(len(word_to_ix), tag_to_ix, EMBEDDING_DIM, HIDDEN_DIM)
 
@@ -95,7 +95,7 @@ for epoch in range(500):
     
     with open("runs/" + file_name, "a+") as f:
         f.write("|Epoch:" + str(epoch) + "|avg_loss:" + str(global_loss / index_t) + "|\n")
-    print("Epoch:" + str(epoch) + "|avg_loss:" + str(global_loss / len(training_data)) + "|\n")
+    # print("Epoch:" + str(epoch) + "|avg_loss:" + str(global_loss / len(training_data)) + "|\n")
 
 torch.save(model, "saved_models/toy_model_8.pkl")
 
