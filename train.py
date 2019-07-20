@@ -67,7 +67,7 @@ with torch.no_grad():
         precheck_tags = precheck_tags.cuda()
     print(model(precheck_sent))
 
-for epoch in range(28):
+for epoch in range(50):
     global_loss = 0
     index_t = 0
     for sentence, tags in training_data:
@@ -104,7 +104,7 @@ for epoch in range(28):
         f.write("|Epoch:" + str(epoch) + "|avg_loss:" + str(global_loss / index_t) + "|\n")
     print("Epoch:" + str(epoch) + "|avg_loss:" + str(global_loss / len(training_data)) + "|")
 
-torch.save(model, "saved_models/model_ver_3.pkl")
+torch.save(model, "saved_models/model_ver_4.pkl")
 
 print("Training Done.")
 
