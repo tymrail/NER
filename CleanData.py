@@ -3,6 +3,9 @@ import json
 import torch
 from itertools import islice
 
+from torchtext.data import Field, Example, TabularDataset
+from torchtext.data import BucketIterator
+
 def data_prepare(path, file_name, json_name):
     sentence_list = []
     tag_pos_list = []

@@ -33,13 +33,14 @@ def log_sum_exp(vec):
 
 class BiLSTM_CRF(nn.Module):
 
-    def __init__(self, vocab_size, tag_to_ix, embedding_dim, hidden_dim):
+    def __init__(self, vocab_size, tag_to_ix, embedding_dim, hidden_dim, dropout_ratio=0.5):
         super(BiLSTM_CRF, self).__init__()
         self.embedding_dim = embedding_dim
         self.hidden_dim = hidden_dim
         self.vocab_size = vocab_size
         self.tag_to_ix = tag_to_ix
         self.tagset_size = len(tag_to_ix)
+        self.dropout = nn.Dropout(p=dropout_ratio)
 
         self.word_embeds = nn.Embedding(vocab_size, embedding_dim)
         self.lstm = nn.LSTM(embedding_dim, hidden_dim // 2, num_layers=1, bidirectional=True)
@@ -93,8 +94,10 @@ class BiLSTM_CRF(nn.Module):
     def _get_lstm_features(self, sentence):
         self.hidden = self.init_hidden()
         embeds = self.word_embeds(sentence).view(len(sentence), 1, -1)
+        embeds = self.dropout(embeds)
         lstm_out, self.hidden = self.lstm(embeds, self.hidden)
         lstm_out = lstm_out.view(len(sentence), self.hidden_dim)
+        lstm_out = self.dropout(lstm_out)
         lstm_feats = self.hidden2tag(lstm_out)
 
         if gpu_available:
@@ -175,7 +178,7 @@ class BiLSTM_CRF(nn.Module):
 
     def forward(self, sentence):
         lstm_feats = self._get_lstm_features(sentence)
-
+        lstm_feats = self.dropout(lstm_feats)
         score, tag_seq = self._viterbi_decode(lstm_feats)
         return score, tag_seq
 

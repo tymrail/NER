@@ -42,7 +42,7 @@ with open("runs/" + file_name, "w+") as f:
 START_TAG = "<START>"
 STOP_TAG = "<STOP>"
 EMBEDDING_DIM = 128
-HIDDEN_DIM = 256
+HIDDEN_DIM = 128
 
 TAG_SET_CoNLL, tag_to_ix, word_to_ix, training_data, testa_data, testb_data = get_data_large()
 # TAG_SET_CoNLL, tag_to_ix, word_to_ix, training_data, testa_data, testb_data = get_data_toy()
@@ -52,6 +52,7 @@ TAG_SET_CoNLL, tag_to_ix, word_to_ix, training_data, testa_data, testb_data = ge
 training_data = training_data + testa_data
 
 model = BiLSTM_CRF(len(word_to_ix), tag_to_ix, EMBEDDING_DIM, HIDDEN_DIM)
+model.train()
 
 if gpu_available:
     model = model.cuda()
@@ -66,7 +67,7 @@ with torch.no_grad():
         precheck_tags = precheck_tags.cuda()
     print(model(precheck_sent))
 
-for epoch in range(15):
+for epoch in range(25):
     global_loss = 0
     index_t = 0
     for sentence, tags in training_data:
@@ -103,7 +104,7 @@ for epoch in range(15):
         f.write("|Epoch:" + str(epoch) + "|avg_loss:" + str(global_loss / index_t) + "|\n")
     print("Epoch:" + str(epoch) + "|avg_loss:" + str(global_loss / len(training_data)) + "|")
 
-torch.save(model, "saved_models/model_ver_2.pkl")
+torch.save(model, "saved_models/model_ver_3.pkl")
 
 print("Training Done.")
 
