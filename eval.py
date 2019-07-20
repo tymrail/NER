@@ -10,13 +10,17 @@ from CleanData import get_data_large, get_data_toy
 
 import time
 
+gpu_available = torch.cuda.is_available()
+
 def prepare_sequence(seq, to_ix):
     idxs = [to_ix[w] for w in seq]
     return torch.tensor(idxs, dtype=torch.long)
 
 TAG_SET_CoNLL, tag_to_ix, word_to_ix, training_data, testa_data, testb_data = get_data_large()
 
-model_loaded = torch.load("saved_models/model_ver_1.pkl")
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+model_loaded = torch.load("saved_models/model_ver_2.pkl", map_location='cuda')
 model_loaded.eval()
 # toy_training_data = [training_data[0]]
 
@@ -29,10 +33,14 @@ with torch.no_grad():
     # for sentence, tags in training_data:
     for sentence, tags in training_data:
         sentence_in = prepare_sequence(sentence, word_to_ix)
+        if len(sentence_in) < 2:
+            continue
+        if gpu_available:
+            sentence_in = sentence_in.cuda()
         real_tagsets = torch.tensor([tag_to_ix[t] for t in tags], dtype=torch.long).tolist()
         predicted_tagsets = model_loaded(sentence_in)[1]
-        print(real_tagsets)
-        print(predicted_tagsets)
+        # print(real_tagsets)
+        # print(predicted_tagsets)
         for real_tag, predicted_tag in zip(real_tagsets, predicted_tagsets):
             if int(real_tag) != 7:
                 recall_train_denominator += 1
@@ -55,10 +63,14 @@ with torch.no_grad():
     # for sentence, tags in deving_data:
     for sentence, tags in testb_data:
         sentence_in = prepare_sequence(sentence, word_to_ix)
+        if len(sentence_in) < 2:
+            continue
+        if gpu_available:
+            sentence_in = sentence_in.cuda()
         real_tagsets = torch.tensor([tag_to_ix[t] for t in tags], dtype=torch.long).tolist()
         predicted_tagsets = model_loaded(sentence_in)[1]
-        print(real_tagsets)
-        print(predicted_tagsets)
+        # print(real_tagsets)
+        # print(predicted_tagsets)
         for real_tag, predicted_tag in zip(real_tagsets, predicted_tagsets):
             if int(real_tag) != 7:
                 recall_dev_denominator += 1
