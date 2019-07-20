@@ -67,7 +67,7 @@ with torch.no_grad():
         precheck_tags = precheck_tags.cuda()
     print(model(precheck_sent))
 
-for epoch in range(25):
+for epoch in range(28):
     global_loss = 0
     index_t = 0
     for sentence, tags in training_data:
