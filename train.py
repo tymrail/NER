@@ -103,7 +103,7 @@ for epoch in range(15):
         f.write("|Epoch:" + str(epoch) + "|avg_loss:" + str(global_loss / index_t) + "|\n")
     print("Epoch:" + str(epoch) + "|avg_loss:" + str(global_loss / len(training_data)) + "|")
 
-torch.save(model, "saved_models/model_ver_1.pkl")
+torch.save(model, "saved_models/model_ver_2.pkl")
 
 print("Training Done.")
 
